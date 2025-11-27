@@ -1,5 +1,8 @@
 // Schema markup utilities for SEO
-import { Movie, Review, Person } from '@/types'
+import { Movie, Review, Author } from '@/lib/types'
+
+// Get site URL from environment or use placeholder
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cinereview.com'
 
 export function generateMovieSchema(movie: any) {
   return {
@@ -62,7 +65,7 @@ export function generateBreadcrumbSchema(items: { name: string; url: string }[])
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      item: `https://yourdomain.com${item.url}`,
+      item: `${SITE_URL}${item.url}`,
     })),
   }
 }
@@ -88,7 +91,7 @@ export function generateArticleSchema(article: any) {
       name: 'CineReview',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://yourdomain.com/logo.png',
+        url: `${SITE_URL}/logo.png`,
       },
     },
   }

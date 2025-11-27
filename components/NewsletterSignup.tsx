@@ -1,145 +1,105 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, FormEvent } from 'react'
+import { EnvelopeIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 
-interface NewsletterSignupProps {
-  placement?: 'inline' | 'popup' | 'footer'
-  showAfterScroll?: boolean
-}
-
-export default function NewsletterSignup({ placement = 'inline', showAfterScroll = false }: NewsletterSignupProps) {
+export default function NewsletterSignup() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
-  const [visible, setVisible] = useState(!showAfterScroll)
 
-  // Show newsletter after user scrolls 50% - use useEffect to avoid hydration mismatch
-  useEffect(() => {
-    if (!showAfterScroll) return
-
-    const handleScroll = () => {
-      const scrolled = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
-      if (scrolled > 50) {
-        setVisible(true)
-        window.removeEventListener('scroll', handleScroll)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [showAfterScroll])
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setStatus('loading')
+    setMessage('')
 
-    // Simulate API call - replace with your newsletter service
-    setTimeout(() => {
-      if (email && email.includes('@')) {
-        setStatus('success')
-        setMessage('Thank you for subscribing! Check your email for confirmation.')
-        setEmail('')
-      } else {
-        setStatus('error')
-        setMessage('Please enter a valid email address.')
-      }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setStatus('error')
+      setMessage('Please enter a valid email address')
+      return
+    }
+
+    // Simulate API call - replace with actual newsletter service
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      setStatus('success')
+      setMessage('Successfully subscribed! Check your inbox for confirmation.')
+      setEmail('')
+
+      // Reset after 5 seconds
       setTimeout(() => {
         setStatus('idle')
         setMessage('')
       }, 5000)
-    }, 1000)
+    } catch (error) {
+      setStatus('error')
+      setMessage('Something went wrong. Please try again.')
+    }
   }
-
-  if (!visible) return null
-
-  const styles = {
-    inline: {
-      container: "bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white",
-      title: "text-2xl md:text-3xl font-bold mb-3 font-[family-name:var(--font-playfair)]",
-      description: "text-purple-100 mb-6 text-lg",
-    },
-    popup: {
-      container: "fixed bottom-0 left-0 right-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white shadow-2xl z-50 transform transition-transform",
-      title: "text-xl font-bold mb-2",
-      description: "text-purple-100 mb-4 text-sm",
-    },
-    footer: {
-      container: "bg-zinc-100 rounded-xl p-6",
-      title: "text-xl font-bold mb-2 text-zinc-900",
-      description: "text-zinc-600 mb-4",
-    },
-  }
-
-  const currentStyle = styles[placement]
 
   return (
-    <div className={currentStyle.container}>
-      {placement === 'popup' && (
-        <button
-          onClick={() => setVisible(false)}
-          className="absolute top-4 right-4 text-white hover:text-purple-200"
-          aria-label="Close newsletter signup"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
+    <section className="py-16 bg-gradient-to-br from-red-600 to-red-800 dark:from-red-700 dark:to-red-900">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          <div className="bg-white/10 p-4 rounded-full">
+            <EnvelopeIcon className="h-12 w-12 text-white" />
+          </div>
+        </div>
 
-      <div className={placement === 'popup' ? 'max-w-4xl mx-auto' : ''}>
-        <h3 className={currentStyle.title}>
-          {placement === 'inline' ? 'Join Our Community of Film Lovers' : 'Never Miss a Review'}
-        </h3>
-        <p className={currentStyle.description}>
-          {placement === 'inline'
-            ? 'Get weekly movie recommendations, exclusive reviews, and insider film news delivered straight to your inbox.'
-            : 'Subscribe to get the latest reviews and recommendations'
-          }
+        {/* Heading */}
+        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          Stay in the Loop
+        </h2>
+        <p className="text-lg text-red-100 mb-8 max-w-2xl mx-auto">
+          Get the latest entertainment news, exclusive interviews, and in-depth reviews delivered straight to your inbox. Join thousands of fellow movie and TV enthusiasts!
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            required
-            className={`flex-1 px-4 py-3 rounded-full ${
-              placement === 'footer'
-                ? 'bg-white border-2 border-zinc-300 text-zinc-900 placeholder-zinc-500 focus:border-purple-600'
-                : 'bg-white/20 backdrop-blur-sm text-white placeholder-white/70 focus:bg-white/30'
-            } focus:outline-none transition-colors`}
-            disabled={status === 'loading'}
-          />
-          <button
-            type="submit"
-            disabled={status === 'loading'}
-            className={`px-8 py-3 rounded-full font-semibold transition-all ${
-              placement === 'footer'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
-                : 'bg-white text-purple-900 hover:bg-purple-50'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
-          </button>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="flex-1 px-4 py-3 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
+              disabled={status === 'loading'}
+              required
+            />
+            <button
+              type="submit"
+              disabled={status === 'loading'}
+              className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+            </button>
+          </div>
+
+          {/* Status Messages */}
+          {status === 'success' && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-white bg-green-500/20 py-2 px-4 rounded-lg">
+              <CheckCircleIcon className="h-5 w-5" />
+              <p className="text-sm">{message}</p>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-white bg-red-900/50 py-2 px-4 rounded-lg">
+              <ExclamationCircleIcon className="h-5 w-5" />
+              <p className="text-sm">{message}</p>
+            </div>
+          )}
+
+          {/* Privacy Note */}
+          <p className="mt-4 text-xs text-red-100/80">
+            We respect your privacy. Unsubscribe at any time.
+          </p>
         </form>
-
-        {message && (
-          <p className={`mt-4 text-sm ${
-            status === 'success'
-              ? (placement === 'footer' ? 'text-green-600' : 'text-green-200')
-              : (placement === 'footer' ? 'text-red-600' : 'text-red-200')
-          }`}>
-            {message}
-          </p>
-        )}
-
-        {placement === 'inline' && (
-          <p className="mt-4 text-sm text-purple-200">
-            By subscribing, you agree to our Privacy Policy. Unsubscribe anytime.
-          </p>
-        )}
       </div>
-    </div>
+    </section>
   )
 }

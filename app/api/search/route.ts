@@ -14,11 +14,11 @@ export async function GET(request: NextRequest) {
     const results = await client.fetch(
       `*[
         _type in ["movie", "tvSeries"] &&
-        title match $query
+        title match $searchQuery
       ] | order(
         select(
           title match $exactQuery => 3,
-          title match $query => 2,
+          title match $searchQuery => 2,
           1
         )
       ) desc [0...10] {
@@ -31,9 +31,10 @@ export async function GET(request: NextRequest) {
         firstAirDate
       }`,
       {
-        query: `${query}*`,
+        searchQuery: `${query}*`,
         exactQuery: query
-      }
+      },
+      { next: { revalidate: 3600 } }
     )
 
     // Check if any of these items exist in recommendation articles

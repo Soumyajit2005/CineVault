@@ -47,14 +47,19 @@ export const FEATURED_REVIEWS_QUERY = groq`
   }
 `
 
-// Get single review by slug
+// Get single review by slug (supports both old 'review' and new 'simpleReview' types)
 export const REVIEW_QUERY = groq`
-  *[_type == "review" && slug.current == $slug][0] {
+  *[(_type == "review" || _type == "simpleReview") && slug.current == $slug][0] {
     _id,
+    _type,
     title,
     slug,
     rating,
     content,
+    excerpt,
+    featured,
+    featuredImage,
+    tags,
     pros,
     cons,
     verdict,

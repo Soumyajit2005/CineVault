@@ -42,20 +42,25 @@ export default defineType({
       validation: Rule => Rule.email(),
     }),
     defineField({
-      name: 'social',
-      title: 'Social Links',
-      type: 'object',
-      fields: [
-        {name: 'twitter', type: 'url', title: 'Twitter/X'},
-        {name: 'instagram', type: 'url', title: 'Instagram'},
-        {name: 'website', type: 'url', title: 'Website'},
-      ],
+      name: 'role',
+      title: 'Role',
+      type: 'string',
+      description: 'Author\'s role (e.g., Staff Writer, Editor, Contributor)',
     }),
   ],
   preview: {
     select: {
       title: 'name',
       media: 'image',
+      role: 'role',
+    },
+    prepare(selection) {
+      const { title, role } = selection
+      return {
+        title,
+        subtitle: role || 'Author',
+        media: selection.media,
+      }
     },
   },
 })

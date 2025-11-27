@@ -1,11 +1,23 @@
 import { type SchemaTypeDefinition } from 'sanity'
-import movie from './movie'
-import tvSeries from './tvSeries'
-import review from './review'
-import category from './category'
+
+// Main content types
+import recommendation from './recommendation'
+import simpleReview from './simpleReview'
+import simpleNews from './simpleNews'
+
+// Supporting types
 import author from './author'
-import recommendation from './movieRecommendation'
+import category from './category'
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [movie, tvSeries, review, category, author, recommendation],
+  types: [
+    // Main content types
+    recommendation,
+    simpleReview,
+    simpleNews,
+
+    // Supporting types
+    author,
+    category,
+  ],
 }

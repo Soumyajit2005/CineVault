@@ -25,28 +25,33 @@ export default defineType({
       name: 'description',
       title: 'Description',
       type: 'text',
+      rows: 3,
     }),
     defineField({
       name: 'color',
       title: 'Color',
       type: 'string',
-      description: 'Hex color code for category badges',
-      validation: Rule => Rule.regex(/^#[0-9A-F]{6}$/i, {
-        name: 'hex',
-        invert: false,
-      }).error('Please enter a valid hex color code'),
+      description: 'Hex color code for category badges (e.g., #ef4444)',
+      validation: Rule => Rule.regex(/^#[0-9A-F]{6}$/i).error('Please enter a valid hex color code like #ef4444'),
+    }),
+    defineField({
+      name: 'icon',
+      title: 'Icon',
+      type: 'string',
+      description: 'Emoji for category (e.g., 🎬, 📰, ⭐)',
     }),
   ],
   preview: {
     select: {
       title: 'title',
       color: 'color',
+      icon: 'icon',
     },
     prepare(selection) {
-      const {title, color} = selection
+      const {title, color, icon} = selection
       return {
-        title,
-        subtitle: color || 'No color set',
+        title: icon ? `${icon} ${title}` : title,
+        subtitle: color || 'No color',
       }
     },
   },
