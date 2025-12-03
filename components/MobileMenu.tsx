@@ -81,7 +81,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 </div>
                 <button
                   onClick={() => {
-                    signOut()
+                    signOut({ callbackUrl: '/' })
                     onClose()
                   }}
                   className="w-full py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-left"
@@ -92,7 +92,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             ) : (
               <button
                 onClick={() => {
-                  signIn()
+                  signIn(undefined, { callbackUrl: '/' })
                   onClose()
                 }}
                 className="w-full py-3 px-4 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"

@@ -138,7 +138,7 @@ export default function Navigation() {
                           </p>
                         </div>
                         <button
-                          onClick={() => signOut()}
+                          onClick={() => signOut({ callbackUrl: '/' })}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         >
                           Sign Out
@@ -151,7 +151,7 @@ export default function Navigation() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => signIn()}
+                  onClick={() => signIn(undefined, { callbackUrl: '/' })}
                   className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg hover:shadow-purple-500/50"
                 >
                   Sign In

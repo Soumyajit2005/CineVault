@@ -3,7 +3,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
-import EmailProvider from "next-auth/providers/email"
+import CredentialsProvider from "next-auth/providers/credentials"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -16,18 +16,84 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_ID || "",
       clientSecret: process.env.GOOGLE_SECRET || "",
     }),
-    EmailProvider({
-      server: process.env.EMAIL_SERVER || "",
-      from: process.env.EMAIL_FROM || "noreply@example.com",
+    CredentialsProvider({
+      id: 'email-code',
+      name: 'Email Code',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        code: { label: "Code", type: "text" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.code) {
+          throw new Error('Email and code are required')
+        }
+
+        // Find the verification code
+        const verificationCode = await prisma.emailVerificationCode.findFirst({
+          where: {
+            email: credentials.email,
+            code: credentials.code,
+            expires: {
+              gt: new Date()
+            }
+          }
+        })
+
+        if (!verificationCode) {
+          throw new Error('Invalid or expired code')
+        }
+
+        // Delete the used code
+        await prisma.emailVerificationCode.delete({
+          where: {
+            id: verificationCode.id
+          }
+        })
+
+        // Find or create user
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        })
+
+        if (!user) {
+          // Create new user
+          const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || []
+          const isAdmin = adminEmails.includes(credentials.email)
+
+          user = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              emailVerified: new Date(),
+              isAdmin,
+            }
+          })
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          isAdmin: user.isAdmin,
+        }
+      }
     }),
   ],
+  session: {
+    strategy: 'jwt',
+  },
   callbacks: {
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+        token.isAdmin = user.isAdmin
+      }
+      return token
+    },
+    async session({ session, token }) {
       if (session?.user) {
-        session.user.id = user.id
-        // Check if user email is in admin list
-        const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || []
-        session.user.isAdmin = user.email ? adminEmails.includes(user.email) : false
+        session.user.id = token.id as string
+        session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },

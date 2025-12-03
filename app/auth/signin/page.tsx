@@ -3,20 +3,64 @@
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function SignInPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
   const [isLoading, setIsLoading] = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
+  const [codeSent, setCodeSent] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading('email')
+    setError('')
     try {
-      await signIn('email', { email, callbackUrl: '/' })
-      setEmailSent(true)
-    } catch (error) {
-      console.error('Error signing in with email:', error)
+      const response = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send code')
+      }
+
+      setCodeSent(true)
+    } catch (error: any) {
+      console.error('Error sending code:', error)
+      setError(error.message || 'Failed to send code')
+    } finally {
+      setIsLoading(null)
+    }
+  }
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading('verify')
+    setError('')
+    try {
+      const result = await signIn('email-code', {
+        email,
+        code,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+
+      if (result?.ok) {
+        router.push('/')
+        router.refresh()
+      }
+    } catch (error: any) {
+      console.error('Error verifying code:', error)
+      setError(error.message || 'Invalid or expired code')
     } finally {
       setIsLoading(null)
     }
@@ -54,25 +98,85 @@ export default function SignInPage() {
 
         {/* Sign In Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8">
-          {emailSent ? (
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 mb-4">
-                <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+          {codeSent ? (
+            <div>
+              <div className="text-center mb-6">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 mb-4">
+                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Check your email
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  We sent a 6-digit code to <strong>{email}</strong>
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Check your email
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                We sent a sign-in link to <strong>{email}</strong>
-              </p>
-              <button
-                onClick={() => setEmailSent(false)}
-                className="mt-4 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
-              >
-                Use a different email
-              </button>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div>
+                  <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Verification Code
+                  </label>
+                  <input
+                    id="code"
+                    name="code"
+                    type="text"
+                    required
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    maxLength={6}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors text-center text-2xl font-mono tracking-widest"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading !== null || code.length !== 6}
+                  className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading === 'verify' ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Verify & Sign In'
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-4 text-center space-y-2">
+                <button
+                  onClick={() => {
+                    setCodeSent(false)
+                    setCode('')
+                    setError('')
+                  }}
+                  className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                >
+                  Use a different email
+                </button>
+                <div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setCode('')
+                      setError('')
+                      handleSendCode(e)
+                    }}
+                    disabled={isLoading !== null}
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                  >
+                    Resend code
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <>
@@ -125,7 +229,13 @@ export default function SignInPage() {
               </div>
 
               {/* Email Sign In */}
-              <form onSubmit={handleEmailSignIn} className="space-y-4">
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSendCode} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email address
@@ -151,7 +261,7 @@ export default function SignInPage() {
                   {isLoading === 'email' ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    'Send sign-in link'
+                    'Send verification code'
                   )}
                 </button>
               </form>

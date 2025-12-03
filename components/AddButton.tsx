@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { PlusIcon } from '@heroicons/react/24/outline'
 
 interface AddButtonProps {
@@ -8,31 +7,14 @@ interface AddButtonProps {
 }
 
 export default function AddButton({ type }: AddButtonProps) {
-  const router = useRouter()
-
   // Normalize type for display
   const displayType = type === 'simpleReview' ? 'Review' :
                       type === 'simpleNews' ? 'News' :
                       type.charAt(0).toUpperCase() + type.slice(1)
 
-  // Map content type to create page route
-  const getCreateRoute = () => {
-    switch (type) {
-      case 'recommendation':
-        return '/recommendations/create'
-      case 'simpleReview':
-      case 'review':
-        return '/reviews/create'
-      case 'simpleNews':
-      case 'news':
-        return '/news/create'
-      default:
-        return '/recommendations/create'
-    }
-  }
-
   const handleClick = () => {
-    router.push(getCreateRoute())
+    // Open Sanity Studio in a new tab
+    window.open('/studio', '_blank')
   }
 
   return (
